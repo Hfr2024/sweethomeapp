@@ -197,7 +197,7 @@
 
   /* ---------- Sheet / modal ---------- */
   .overlay{
-    position:fixed;inset:0;background:rgba(59,36,23,.45);z-index:60;
+    position:fixed;inset:0;background:rgba(59,36,23,.45);z-index:80;
     display:none;align-items:flex-end;
   }
   .overlay.show{display:flex;}
@@ -1145,6 +1145,11 @@ function renderAdminSettings(body){
       <button class="primary-btn" id="savePass">تحديث كلمة المرور</button>
     </div>
     <div class="admin-card">
+      <h3>🚀 نشر التحديثات لكل العملاء</h3>
+      <p style="font-size:12px;color:#7a6a5c;line-height:1.8;">أي تعديل بتعمله هنا (منتجات، أسعار، صور) بيتخزن على جهازك بس. عشان يظهر عند كل العملاء، دوس الزرار ده وارفع الملف اللي هينزل باسم <b>data.json</b> على نفس مستودع GitHub بتاعك (بيستبدل القديم لو موجود). بعد الرفع والـ Commit، كل حد يفتح التطبيق (حتى لو نسخته مثبتة كـ APK) هيشوف التحديث الجديد.</p>
+      <button class="primary-btn" id="publishData">تحميل ملف التحديث (data.json) 🚀</button>
+    </div>
+    <div class="admin-card">
       <h3>نسخة احتياطية</h3>
       <p style="font-size:12px;color:#7a6a5c;">صدّر بياناتك (منتجات، فروع، إعدادات) كملف، واستورده لاحقاً على نفس الجهاز أو جهاز آخر.</p>
       <button class="secondary-btn" id="exportData">تصدير نسخة احتياطية 📤</button>
@@ -1171,6 +1176,14 @@ function renderAdminSettings(body){
   document.getElementById('savePass').onclick = ()=>{
     const v = document.getElementById('newPassInput').value.trim();
     if(v){ state.adminPassword = v; saveState(); toast('تم تحديث كلمة المرور'); }
+  };
+  document.getElementById('publishData').onclick = ()=>{
+    const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'data.json';
+    a.click();
+    toast('نزّل data.json وارفعه على GitHub عشان التحديثات تظهر للكل');
   };
   document.getElementById('exportData').onclick = ()=>{
     const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
@@ -1203,12 +1216,25 @@ function renderAdminSettings(body){
 }
 
 /* =========================================================
-   INIT
+   INIT — تحميل بيانات مشتركة (data.json) لو موجودة على الموقع
    ========================================================= */
-applyTheme();
-renderCats();
-renderProducts();
-renderCartBadge();
+async function loadSharedDataThenRender(){
+  try{
+    const res = await fetch('data.json', {cache:'no-store'});
+    if(res.ok){
+      const remote = await res.json();
+      if(remote && remote.products){
+        state = Object.assign(structuredClone(DEFAULT_STATE), remote);
+        saveState();
+      }
+    }
+  }catch(e){ /* مفيش data.json لسه، أو مفيش إنترنت — هيشتغل بالبيانات المحفوظة محلياً */ }
+  applyTheme();
+  renderCats();
+  renderProducts();
+  renderCartBadge();
+}
+loadSharedDataThenRender();
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{

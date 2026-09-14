@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sweethome-cache-v1';
+const CACHE_NAME = 'sweethome-cache-v2';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -26,6 +26,25 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const url = event.request.url;
+  const isFreshFirst = url.includes('data.json') || url.endsWith('.html') || url.endsWith('/');
+
+  if (isFreshFirst) {
+    // شبكة أولاً عشان التحديثات (data.json) تظهر فوراً، مع نسخة محفوظة كخطة بديلة لو الإنترنت مقطوع
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetchPromise = fetch(event.request)
