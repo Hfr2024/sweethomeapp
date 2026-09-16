@@ -296,12 +296,44 @@
   .note{font-size:11.5px;color:#8a7057;line-height:1.6;background:#fff6e2;border:1px dashed var(--accent);border-radius:10px;padding:10px;}
   .order-card{background:var(--bg);border-radius:10px;padding:10px;margin-bottom:8px;font-size:12.5px;border:1px solid rgba(200,155,60,.4);}
   .order-card .top-row{display:flex;justify-content:space-between;font-weight:800;margin-bottom:4px;}
+
+  /* ---------- Splash screen ---------- */
+  .splash{
+    position:fixed;inset:0;z-index:200;
+    background:linear-gradient(160deg, var(--bg), #fff5e0);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    transition:opacity .5s ease, visibility .5s ease;
+  }
+  .splash.hide{opacity:0;visibility:hidden;pointer-events:none;}
+  .splash img{
+    width:96px;height:96px;border-radius:50%;
+    border:4px solid var(--accent);box-shadow:0 6px 20px rgba(59,36,23,.25);
+    animation:splashPop .7s cubic-bezier(.34,1.56,.64,1);
+  }
+  .splash-name{font-family:var(--font-display);font-size:30px;color:var(--ink);animation:fadeUp .6s ease .15s both;}
+  .splash-dots{display:flex;gap:6px;animation:fadeUp .6s ease .3s both;}
+  .splash-dots span{width:7px;height:7px;border-radius:50%;background:var(--primary);animation:dotPulse 1s ease-in-out infinite;}
+  .splash-dots span:nth-child(2){animation-delay:.15s;}
+  .splash-dots span:nth-child(3){animation-delay:.3s;}
+  @keyframes splashPop{0%{transform:scale(.4) rotate(-8deg);opacity:0;}70%{transform:scale(1.08) rotate(2deg);opacity:1;}100%{transform:scale(1) rotate(0);}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes dotPulse{0%,80%,100%{opacity:.3;transform:scale(.8);}40%{opacity:1;transform:scale(1);}}
+
+  /* ---------- Page entrance animation ---------- */
+  .fade-in-el{animation:fadeUp .55s ease both;}
 </style>
 </head>
 <body>
 
+<!-- ===================== SPLASH SCREEN ===================== -->
+<div class="splash" id="splashScreen">
+  <img id="splashLogo" src="logo.png" alt="Sweet Home">
+  <div class="splash-name" id="splashName">Sweet Home</div>
+  <div class="splash-dots"><span></span><span></span><span></span></div>
+</div>
+
 <!-- ===================== TOP BAR ===================== -->
-<div class="topbar">
+<div class="topbar fade-in-el" style="animation-delay:.05s;">
   <div class="brand">
     <img class="brand-logo" id="headerLogo" src="logo.png" alt="Sweet Home">
     <div>
@@ -316,7 +348,7 @@
 </div>
 
 <!-- ===================== HERO ===================== -->
-<div class="hero">
+<div class="hero fade-in-el" style="animation-delay:.15s;">
   <h1 id="heroName">Sweet Home</h1>
   <p id="heroTag">بيت الحلويات... دائماً أحلى ♡</p>
   <div class="ribbon">♥ أجمل الحلويات بكل وقت ♥</div>
@@ -324,8 +356,8 @@
 </div>
 
 <!-- ===================== QUICK CATEGORY GRID ===================== -->
-<div class="quick-cats" id="quickCatsGrid"></div>
-<div class="shopnow-wrap"><button class="shopnow-btn" id="shopNowBtn">تسوق الآن 🛒</button></div>
+<div class="quick-cats fade-in-el" id="quickCatsGrid" style="animation-delay:.25s;"></div>
+<div class="shopnow-wrap fade-in-el" style="animation-delay:.32s;"><button class="shopnow-btn" id="shopNowBtn">تسوق الآن 🛒</button></div>
 
 <!-- ===================== SEARCH ===================== -->
 <div class="search-wrap">
@@ -440,7 +472,8 @@ const DEFAULT_STATE = {
     {id:'p12', name:'بسكويت زبدة دنماركي', category:'كوكيز وبسكويت', price:40, oldPrice:0, desc:'بسكويت زبدة فاخر بطعم غني', emoji:'🍪', image:''}
   ],
   orders:[],
-  adminPassword:'admin123'
+  adminPassword:'admin123',
+  categoryImages:{}
 };
 
 const CATEGORY_EMOJI = {
@@ -452,7 +485,6 @@ function loadState(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if(!raw) return structuredClone(DEFAULT_STATE);
     const parsed = JSON.parse(raw);
-    // merge with defaults to survive future updates
     return Object.assign(structuredClone(DEFAULT_STATE), parsed);
   }catch(e){ return structuredClone(DEFAULT_STATE); }
 }
@@ -465,7 +497,6 @@ let searchTerm = '';
 let adminAuthed = false;
 let adminTab = 'products';
 
-/* ---------------- helpers ---------------- */
 function uid(prefix){ return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function money(n){ return Number(n).toLocaleString('ar-EG') + ' ج.م'; }
 function saveCart(){ localStorage.setItem('sweethome_cart', JSON.stringify(cart)); }
@@ -483,7 +514,6 @@ function normalizeEgyptPhone(phone){
   return '20'+p;
 }
 
-/* ---------------- theming ---------------- */
 function applyTheme(){
   const s = state.settings;
   document.documentElement.style.setProperty('--primary', s.primary);
@@ -501,12 +531,15 @@ function applyTheme(){
   document.getElementById('headerTag').textContent = s.tagline;
   document.getElementById('heroName').textContent = s.storeName;
   document.getElementById('heroTag').textContent = s.tagline + ' ♡';
+  const splashLogo = document.getElementById('splashLogo');
+  const splashName = document.getElementById('splashName');
+  if(splashLogo) splashLogo.src = s.logo || 'logo.png';
+  if(splashName) splashName.textContent = s.storeName;
   document.title = s.storeName + ' | بيت الحلويات';
   const meta = document.querySelector('meta[name=theme-color]');
   if(meta) meta.setAttribute('content', s.primary);
 }
 
-/* ---------------- categories ---------------- */
 function renderCats(){
   const row = document.getElementById('catsRow');
   const cats = ['الكل', ...state.categories];
@@ -520,11 +553,15 @@ function renderCats(){
 function renderQuickCats(){
   const grid = document.getElementById('quickCatsGrid');
   if(!grid) return;
-  grid.innerHTML = state.categories.map(c=>`
+  grid.innerHTML = state.categories.map(c=>{
+    const img = state.categoryImages && state.categoryImages[c];
+    const visual = img ? `<img src="${img}" style="width:100%;height:64px;object-fit:cover;border-radius:10px;margin-bottom:6px;">` : `<div class="qc-emoji">${CATEGORY_EMOJI[c] || '🍬'}</div>`;
+    return `
     <button class="quick-cat" data-qcat="${c}">
-      <div class="qc-emoji">${CATEGORY_EMOJI[c] || '🍬'}</div>
+      ${visual}
       <div class="qc-label">${c}</div>
-    </button>`).join('');
+    </button>`;
+  }).join('');
   grid.querySelectorAll('[data-qcat]').forEach(btn=>{
     btn.onclick = ()=>{ activeCategory = btn.dataset.qcat; renderCats(); renderProducts(); scrollToProducts(); };
   });
@@ -537,7 +574,6 @@ function scrollToCats(){
   document.getElementById('catsRow').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
-/* ---------------- products ---------------- */
 function getCartQty(id){ const it = cart.find(c=>c.id===id); return it? it.qty : 0; }
 function setCartQty(id, qty){
   const p = state.products.find(p=>p.id===id);
@@ -614,7 +650,6 @@ document.getElementById('productOverlay').addEventListener('click', e=>{
   if(e.target.id==='productOverlay') e.target.classList.remove('show');
 });
 
-/* ---------------- cart badge / fab ---------------- */
 function renderCartBadge(){
   const count = cart.reduce((s,c)=>s+c.qty,0);
   const total = cart.reduce((s,c)=>{
@@ -632,8 +667,7 @@ function renderCartBadge(){
   if(navBadge){ navBadge.textContent = count; navBadge.style.display = count>0 ? 'flex':'none'; }
 }
 
-/* ---------------- cart sheet / checkout ---------------- */
-let checkoutStep = 'cart'; // cart | form
+let checkoutStep = 'cart';
 function openCart(){ checkoutStep='cart'; renderCartSheet(); document.getElementById('cartOverlay').classList.add('show'); }
 function closeCart(){ document.getElementById('cartOverlay').classList.remove('show'); }
 document.getElementById('cartOpenBtn').onclick = openCart;
@@ -802,7 +836,6 @@ function renderCartSheet(){
   }
 }
 
-/* ---------------- search ---------------- */
 document.getElementById('searchInput').addEventListener('input', e=>{
   searchTerm = e.target.value;
   renderProducts();
@@ -817,9 +850,6 @@ document.getElementById('adminCloseBtn').onclick = ()=>{
   document.getElementById('adminScreen').classList.remove('show');
 };
 
-/* =========================================================
-   MENU / ACCOUNT SHEET + BOTTOM NAV
-   ========================================================= */
 function openMenu(){
   document.getElementById('menuSheet').innerHTML = `
     <div class="sheet-head"><h2>${state.settings.storeName}</h2><button class="close-x" id="closeMenuX">✕</button></div>
@@ -846,10 +876,6 @@ document.getElementById('shopNowBtn').onclick = ()=>{ activeCategory='الكل';
 document.getElementById('navHome').onclick = ()=>{ window.scrollTo({top:0, behavior:'smooth'}); };
 document.getElementById('navCats').onclick = ()=>{ scrollToCats(); };
 document.getElementById('navCart').onclick = openCart;
-
-/* =========================================================
-   ADMIN PANEL
-   ========================================================= */
 
 function renderAdmin(){
   const content = document.getElementById('adminContent');
@@ -889,7 +915,6 @@ function renderAdmin(){
   if(adminTab==='settings') renderAdminSettings(body);
 }
 
-/* ---- products tab ---- */
 function renderAdminProducts(body){
   body.innerHTML = `
     <div class="admin-card">
@@ -1004,7 +1029,6 @@ function openEditProduct(id){
   }, p);
 }
 
-/* ---- branches tab ---- */
 function renderAdminBranches(body){
   body.innerHTML = `
     <div class="admin-card">
@@ -1038,7 +1062,6 @@ function renderAdminBranches(body){
   });
 }
 
-/* ---- appearance tab ---- */
 function renderAdminAppearance(body){
   const s = state.settings;
   body.innerHTML = `
@@ -1085,7 +1108,6 @@ function renderAdminAppearance(body){
   };
 }
 
-/* ---- payment tab ---- */
 function renderAdminPayment(body){
   const pay = state.payment;
   body.innerHTML = `
@@ -1105,7 +1127,6 @@ function renderAdminPayment(body){
   };
 }
 
-/* ---- orders tab ---- */
 function renderAdminOrders(body){
   if(state.orders.length===0){
     body.innerHTML = `<div class="note">لا توجد طلبات مسجلة على هذا الجهاز بعد. كل طلب يرسله الزبون عبر واتساب يُسجَّل هنا تلقائياً كأرشيف محلي.</div>`;
@@ -1128,11 +1149,11 @@ function renderAdminOrders(body){
   };
 }
 
-/* ---- settings tab ---- */
 function renderAdminSettings(body){
   body.innerHTML = `
     <div class="admin-card">
       <h3>الأقسام (الكاتيجوري)</h3>
+      <p style="font-size:11.5px;color:#7a6a5c;margin-bottom:8px;">اكتب اسم صح لو فيه غلط إملائي، وارفع صورة تعبر عن القسم (اختياري)، ثم دوس "حفظ" لكل قسم.</p>
       <div id="catAdminList"></div>
       <div class="row2">
         <div class="field"><input type="text" id="newCatInput" placeholder="اسم قسم جديد"></div>
@@ -1162,11 +1183,53 @@ function renderAdminSettings(body){
     </div>
   `;
   const catList = document.getElementById('catAdminList');
-  catList.innerHTML = state.categories.map(c=>`
-    <div class="admin-list-item"><div class="meta"><b>${c}</b></div><button class="small-btn del" data-delcat="${c}">حذف</button></div>
-  `).join('');
+  catList.innerHTML = state.categories.map((c,i)=>{
+    const img = state.categoryImages && state.categoryImages[c];
+    const thumb = img ? `<img src="${img}">` : `<div class="ph">${CATEGORY_EMOJI[c]||'🍬'}</div>`;
+    return `
+    <div class="admin-list-item" style="align-items:flex-start;flex-wrap:wrap;">
+      ${thumb}
+      <div class="meta" style="min-width:140px;">
+        <input type="text" class="cat-rename" data-idx="${i}" value="${c}" style="width:100%;padding:6px 8px;border-radius:8px;border:1.5px solid var(--accent);background:var(--card);font-size:12.5px;margin-bottom:6px;">
+        <input type="file" accept="image/*" class="cat-img-input" data-idx="${i}" style="font-size:11px;">
+      </div>
+      <button class="small-btn edit cat-save" data-idx="${i}">حفظ</button>
+      <button class="small-btn del" data-delcat="${c}">حذف</button>
+    </div>`;
+  }).join('');
+  const pendingCatImages = {};
+  catList.querySelectorAll('.cat-img-input').forEach(inp=>{
+    inp.onchange = async ()=>{
+      if(inp.files[0]){ pendingCatImages[inp.dataset.idx] = await readImageResized(inp.files[0], 300, 0.8); }
+    };
+  });
+  catList.querySelectorAll('.cat-save').forEach(btn=>{
+    btn.onclick = ()=>{
+      const idx = btn.dataset.idx;
+      const oldName = state.categories[idx];
+      const newName = catList.querySelector(`.cat-rename[data-idx="${idx}"]`).value.trim();
+      if(!newName) { toast('اكتب اسم القسم'); return; }
+      if(newName !== oldName){
+        state.categories[idx] = newName;
+        state.products.forEach(p=>{ if(p.category===oldName) p.category = newName; });
+        if(state.categoryImages && state.categoryImages[oldName]){
+          state.categoryImages[newName] = state.categoryImages[oldName];
+          delete state.categoryImages[oldName];
+        }
+        if(activeCategory===oldName) activeCategory = newName;
+      }
+      if(pendingCatImages[idx]){
+        if(!state.categoryImages) state.categoryImages = {};
+        state.categoryImages[newName] = pendingCatImages[idx];
+      }
+      saveState(); renderAdmin(); renderCats(); renderProducts();
+      toast('تم حفظ القسم');
+    };
+  });
   catList.querySelectorAll('[data-delcat]').forEach(b=>b.onclick=()=>{
-    state.categories = state.categories.filter(c=>c!==b.dataset.delcat);
+    const name = b.dataset.delcat;
+    state.categories = state.categories.filter(c=>c!==name);
+    if(state.categoryImages) delete state.categoryImages[name];
     saveState(); renderAdmin(); renderCats(); renderProducts();
   });
   document.getElementById('addCatBtn').onclick = ()=>{
@@ -1215,10 +1278,8 @@ function renderAdminSettings(body){
   };
 }
 
-/* =========================================================
-   INIT — تحميل بيانات مشتركة (data.json) لو موجودة على الموقع
-   ========================================================= */
 async function loadSharedDataThenRender(){
+  const startTime = Date.now();
   try{
     const res = await fetch('data.json', {cache:'no-store'});
     if(res.ok){
@@ -1228,11 +1289,17 @@ async function loadSharedDataThenRender(){
         saveState();
       }
     }
-  }catch(e){ /* مفيش data.json لسه، أو مفيش إنترنت — هيشتغل بالبيانات المحفوظة محلياً */ }
+  }catch(e){ }
   applyTheme();
   renderCats();
   renderProducts();
   renderCartBadge();
+  const elapsed = Date.now() - startTime;
+  const minSplashTime = 750;
+  setTimeout(()=>{
+    const splash = document.getElementById('splashScreen');
+    if(splash) splash.classList.add('hide');
+  }, Math.max(0, minSplashTime - elapsed));
 }
 loadSharedDataThenRender();
 
