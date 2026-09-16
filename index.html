@@ -36,7 +36,6 @@
   button{font-family:inherit; cursor:pointer;}
   input,select,textarea{font-family:inherit;}
 
-  /* ---------- Header ---------- */
   .topbar{
     display:flex;align-items:center;justify-content:space-between;
     padding:14px 16px;
@@ -68,7 +67,6 @@
     font-weight:700;
   }
 
-  /* ---------- Hero ---------- */
   .hero{
     text-align:center;padding:22px 16px 14px;
   }
@@ -91,7 +89,6 @@
   .ribbon:after{left:0;border-top-color:#7c0c1e;border-left-width:0;}
   .delivery-note{margin-top:12px;font-size:12.5px;font-weight:700;color:var(--ink);background:var(--card);display:inline-block;padding:7px 14px;border-radius:16px;border:1.5px dashed var(--accent);}
 
-  /* ---------- Search + categories ---------- */
   .search-wrap{padding:16px 16px 0;}
   .search-wrap input{
     width:100%;padding:12px 16px;border-radius:24px;
@@ -110,7 +107,6 @@
   }
   .cat-pill.active{background:var(--primary);border-color:var(--primary);color:#fff;}
 
-  /* ---------- Product grid ---------- */
   .grid{
     display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 16px 16px;
   }
@@ -142,7 +138,6 @@
   .add-btn:active{transform:scale(.96);}
   .empty-state{padding:50px 20px;text-align:center;color:#8a7a6a;}
 
-  /* ---------- Floating cart ---------- */
   .cart-fab{
     position:fixed;bottom:76px;left:16px;right:16px;z-index:45;
     background:var(--primary);color:#fff;border:none;border-radius:26px;
@@ -152,21 +147,36 @@
   }
   .cart-fab.show{display:flex;}
 
-  /* ---------- Quick categories grid ---------- */
-  .quick-cats{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:4px 16px 18px;}
+  .quick-cats{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:4px 16px 18px;}
   .quick-cat{
-    background:var(--card);border:1.5px solid var(--accent);border-radius:16px;
-    padding:14px 8px;text-align:center;box-shadow:0 3px 8px rgba(59,36,23,.08);
+    background:linear-gradient(160deg, var(--card), #fff);
+    border:1px solid rgba(200,155,60,.35);border-radius:18px;
+    padding:16px 10px 14px;text-align:center;
+    box-shadow:0 4px 12px rgba(59,36,23,.10);
+    transition:transform .15s ease, box-shadow .15s ease;
   }
-  .quick-cat .qc-emoji{font-size:34px;margin-bottom:6px;}
+  .quick-cat:active{transform:scale(.95);box-shadow:0 2px 6px rgba(59,36,23,.12);}
+  .qc-icon{
+    width:64px;height:64px;margin:0 auto 8px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 35% 30%, #fff, var(--qc-tint, var(--bg)) 75%);
+    border:2px solid var(--qc-ring, var(--accent));
+    box-shadow:0 3px 8px rgba(59,36,23,.12);
+    overflow:hidden;
+  }
+  .qc-icon img{width:100%;height:100%;object-fit:cover;}
+  .quick-cat .qc-emoji{font-size:30px;}
   .quick-cat .qc-label{font-weight:800;font-size:13.5px;color:var(--ink);}
+  .quick-cat:nth-child(4n+1) .qc-icon{--qc-tint:#FBEFDA;--qc-ring:#C89B3C;}
+  .quick-cat:nth-child(4n+2) .qc-icon{--qc-tint:#FCE4E7;--qc-ring:#B3122E;}
+  .quick-cat:nth-child(4n+3) .qc-icon{--qc-tint:#EFE6D8;--qc-ring:#8a6a3c;}
+  .quick-cat:nth-child(4n+4) .qc-icon{--qc-tint:#F6E9D8;--qc-ring:#D98A3C;}
   .shopnow-wrap{padding:0 16px 20px;text-align:center;}
   .shopnow-btn{
     background:var(--ink);color:#fff;border:none;border-radius:14px;
     padding:14px 30px;font-size:15px;font-weight:800;box-shadow:0 6px 14px rgba(59,36,23,.3);
   }
 
-  /* ---------- Features strip ---------- */
   .features{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:6px 16px 10px;}
   .feature{
     background:var(--card);border:1px solid rgba(200,155,60,.4);border-radius:14px;
@@ -175,7 +185,6 @@
   .feature .f-icon{font-size:24px;margin-bottom:4px;}
   .feature .f-text{font-size:11px;font-weight:700;color:var(--ink);line-height:1.4;}
 
-  /* ---------- Bottom navigation ---------- */
   .bottom-nav{
     position:fixed;bottom:0;left:0;right:0;z-index:50;
     background:var(--card);border-top:2px solid var(--accent);
@@ -195,7 +204,6 @@
     display:flex;align-items:center;justify-content:center;padding:0 3px;font-weight:800;
   }
 
-  /* ---------- Sheet / modal ---------- */
   .overlay{
     position:fixed;inset:0;background:rgba(59,36,23,.45);z-index:80;
     display:none;align-items:flex-end;
@@ -251,12 +259,10 @@
   }
   .ghost-btn{background:none;border:none;color:var(--primary);font-weight:700;font-size:13px;text-decoration:underline;}
 
-  /* ---------- Footer ---------- */
   .footer{text-align:center;padding:26px 16px 10px;color:var(--primary);}
   .footer .hearts{font-family:var(--font-display);font-size:20px;}
   .footer p{font-size:12px;color:#8a7057;margin-top:4px;}
 
-  /* ---------- Toast ---------- */
   .toast{
     position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
     background:var(--ink);color:#fff;padding:11px 20px;border-radius:20px;
@@ -265,7 +271,6 @@
   }
   .toast.show{opacity:1;}
 
-  /* ---------- Admin ---------- */
   .admin-screen{position:fixed;inset:0;background:var(--bg);z-index:70;display:none;flex-direction:column;overflow-y:auto;}
   .admin-screen.show{display:flex;}
   .admin-head{
@@ -297,7 +302,6 @@
   .order-card{background:var(--bg);border-radius:10px;padding:10px;margin-bottom:8px;font-size:12.5px;border:1px solid rgba(200,155,60,.4);}
   .order-card .top-row{display:flex;justify-content:space-between;font-weight:800;margin-bottom:4px;}
 
-  /* ---------- Splash screen ---------- */
   .splash{
     position:fixed;inset:0;z-index:200;
     background:linear-gradient(160deg, var(--bg), #fff5e0);
@@ -319,20 +323,17 @@
   @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
   @keyframes dotPulse{0%,80%,100%{opacity:.3;transform:scale(.8);}40%{opacity:1;transform:scale(1);}}
 
-  /* ---------- Page entrance animation ---------- */
   .fade-in-el{animation:fadeUp .55s ease both;}
 </style>
 </head>
 <body>
 
-<!-- ===================== SPLASH SCREEN ===================== -->
 <div class="splash" id="splashScreen">
   <img id="splashLogo" src="logo.png" alt="Sweet Home">
   <div class="splash-name" id="splashName">Sweet Home</div>
   <div class="splash-dots"><span></span><span></span><span></span></div>
 </div>
 
-<!-- ===================== TOP BAR ===================== -->
 <div class="topbar fade-in-el" style="animation-delay:.05s;">
   <div class="brand">
     <img class="brand-logo" id="headerLogo" src="logo.png" alt="Sweet Home">
@@ -347,7 +348,6 @@
   </div>
 </div>
 
-<!-- ===================== HERO ===================== -->
 <div class="hero fade-in-el" style="animation-delay:.15s;">
   <h1 id="heroName">Sweet Home</h1>
   <p id="heroTag">بيت الحلويات... دائماً أحلى ♡</p>
@@ -355,22 +355,17 @@
   <div class="delivery-note">🚚 خدمة توصيل لجميع مناطق وأحياء المنصورة</div>
 </div>
 
-<!-- ===================== QUICK CATEGORY GRID ===================== -->
 <div class="quick-cats fade-in-el" id="quickCatsGrid" style="animation-delay:.25s;"></div>
 <div class="shopnow-wrap fade-in-el" style="animation-delay:.32s;"><button class="shopnow-btn" id="shopNowBtn">تسوق الآن 🛒</button></div>
 
-<!-- ===================== SEARCH ===================== -->
 <div class="search-wrap">
   <input type="text" id="searchInput" placeholder="🔍 ابحث عن حلوى...">
 </div>
 
-<!-- ===================== CATEGORIES ===================== -->
 <div class="cats" id="catsRow"></div>
 
-<!-- ===================== PRODUCTS ===================== -->
 <div class="grid" id="productsGrid"></div>
 
-<!-- ===================== FEATURES STRIP ===================== -->
 <div class="features">
   <div class="feature"><div class="f-icon">🚚</div><div class="f-text">توصيل سريع لجميع مناطق المنصورة</div></div>
   <div class="feature"><div class="f-icon">✅</div><div class="f-text">جودة عالية في كل منتج</div></div>
@@ -378,19 +373,16 @@
   <div class="feature"><div class="f-icon">🌿</div><div class="f-text">مكونات طبيعية وطازجة</div></div>
 </div>
 
-<!-- ===================== FOOTER ===================== -->
 <div class="footer">
   <div class="hearts">♥ سويت هوم ♥</div>
   <p>دائماً معاكم ... بأحلى الأوقات</p>
 </div>
 
-<!-- ===================== FLOATING CART BUTTON ===================== -->
 <button class="cart-fab" id="cartFab">
   <span id="cartFabCount">0 عناصر</span>
   <span id="cartFabTotal">0 جنيه</span>
 </button>
 
-<!-- ===================== BOTTOM NAVIGATION ===================== -->
 <div class="bottom-nav">
   <button class="nav-item active" id="navHome"><span class="nav-icon">🏠</span>الرئيسية</button>
   <button class="nav-item" id="navCats"><span class="nav-icon">🍽️</span>الأقسام</button>
@@ -398,25 +390,20 @@
   <button class="nav-item" id="navAccount"><span class="nav-icon">👤</span>حسابي</button>
 </div>
 
-<!-- ===================== MENU / ACCOUNT OVERLAY ===================== -->
 <div class="overlay" id="menuOverlay">
   <div class="sheet" id="menuSheet"></div>
 </div>
 
-<!-- ===================== CART / CHECKOUT OVERLAY ===================== -->
 <div class="overlay" id="cartOverlay">
   <div class="sheet" id="cartSheet"></div>
 </div>
 
-<!-- ===================== PRODUCT DETAIL OVERLAY ===================== -->
 <div class="overlay center" id="productOverlay">
   <div class="sheet" id="productSheet" style="border-radius:22px;max-width:420px;"></div>
 </div>
 
-<!-- ===================== TOAST ===================== -->
 <div class="toast" id="toast"></div>
 
-<!-- ===================== ADMIN SCREEN ===================== -->
 <div class="admin-screen" id="adminScreen">
   <div class="admin-head">
     <h2>لوحة الإدارة</h2>
@@ -426,12 +413,6 @@
 </div>
 
 <script>
-/* =========================================================
-   SWEET HOME — إدارة الحلويات
-   تطبيق ويب تقدمي (PWA) يعمل بالكامل من المتصفح/الجهاز
-   جميع البيانات محفوظة محلياً على الجهاز (localStorage)
-   ========================================================= */
-
 const STORAGE_KEY = 'sweethome_state_v1';
 
 const DEFAULT_STATE = {
@@ -555,10 +536,10 @@ function renderQuickCats(){
   if(!grid) return;
   grid.innerHTML = state.categories.map(c=>{
     const img = state.categoryImages && state.categoryImages[c];
-    const visual = img ? `<img src="${img}" style="width:100%;height:64px;object-fit:cover;border-radius:10px;margin-bottom:6px;">` : `<div class="qc-emoji">${CATEGORY_EMOJI[c] || '🍬'}</div>`;
+    const visual = img ? `<img src="${img}" alt="${c}">` : `<span class="qc-emoji">${CATEGORY_EMOJI[c] || '🍬'}</span>`;
     return `
     <button class="quick-cat" data-qcat="${c}">
-      ${visual}
+      <div class="qc-icon">${visual}</div>
       <div class="qc-label">${c}</div>
     </button>`;
   }).join('');
