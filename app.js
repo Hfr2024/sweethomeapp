@@ -43,9 +43,6 @@ const DEFAULT_STATE = {
     {id:'p11', name:'كوكيز شوكولاتة تشيب', category:'كوكيز وبسكويت', price:45, oldPrice:0, desc:'كوكيز مقرمش من الخارج طري من الداخل بقطع شوكولاتة', emoji:'🍪', image:'', featured:false, rating:4.2},
     {id:'p12', name:'بسكويت زبدة دنماركي', category:'كوكيز وبسكويت', price:40, oldPrice:0, desc:'بسكويت زبدة فاخر بطعم غني', emoji:'🍪', image:'', featured:false, rating:0}
   ],
-  coupons:[
-    {code:'SWEET10', percent:10}
-  ],
   orders:[],
   adminPassword:'admin123',
   categoryImages:{}
@@ -65,6 +62,9 @@ function loadState(){
   }catch(e){ return structuredClone(DEFAULT_STATE); }
 }
 function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function markUnpublished(){ localStorage.setItem('sweethome_unpublished', '1'); }
+function clearUnpublished(){ localStorage.removeItem('sweethome_unpublished'); }
+function hasUnpublishedChanges(){ return localStorage.getItem('sweethome_unpublished') === '1'; }
 
 let state = loadState();
 let cart = JSON.parse(localStorage.getItem('sweethome_cart')||'[]');
@@ -404,14 +404,6 @@ function renderCartSheet(){
         </div>
         <div class="pay-info" id="payInfo"></div>
       </div>
-      <div class="field">
-        <label>كود الخصم (اختياري)</label>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="couponInput" placeholder="اكتب الكود هنا" style="flex:1;">
-          <button type="button" class="small-btn edit" id="applyCoupon" style="height:auto;padding:0 14px;">تطبيق</button>
-        </div>
-        <div class="pay-info" id="couponHint" style="display:none;"></div>
-      </div>
       <div class="field"><label>ملاحظات إضافية (اختياري)</label><textarea id="custNotes" placeholder="مثال: بدون مكسرات، ميعاد التسليم..."></textarea></div>
       <button class="primary-btn" id="sendOrder">إرسال الطلب عبر واتساب 🟢</button>
       <button class="secondary-btn" id="backToCart">◄ رجوع للسلة</button>
@@ -421,20 +413,6 @@ function renderCartSheet(){
     const addressField = document.getElementById('addressField');
     const branchSelect = document.getElementById('branchSelect');
     const nearestHint = document.getElementById('nearestHint');
-    let appliedCoupon = null;
-    document.getElementById('applyCoupon').onclick = ()=>{
-      const code = document.getElementById('couponInput').value.trim().toUpperCase();
-      const hint = document.getElementById('couponHint');
-      const found = (state.coupons||[]).find(c=>c.code.toUpperCase()===code);
-      hint.style.display = 'block';
-      if(found){
-        appliedCoupon = found;
-        hint.innerHTML = `✅ تم تطبيق خصم ${found.percent}% — وفرت ${money(cartTotal()*found.percent/100)}`;
-      } else {
-        appliedCoupon = null;
-        hint.innerHTML = `الكود غير صحيح أو منتهي.`;
-      }
-    };
 
     function guessNearestBranch(text){
       const clean = (text||'').trim();
@@ -486,18 +464,14 @@ function renderCartSheet(){
 
       const payLabel = payType==='vodafone' ? 'فودافون كاش' : payType==='instapay' ? 'انستاباي' : 'الدفع عند الاستلام';
       const deliveryLabel = deliveryType==='delivery' ? 'توصيل للمنزل' : 'استلام من الفرع';
-      const subtotal = cartTotal();
-      const discount = appliedCoupon ? Math.round(subtotal*appliedCoupon.percent/100) : 0;
-      const finalTotal = subtotal - discount;
+      const finalTotal = cartTotal();
 
       let msg = `مرحباً *${state.settings.storeName}* 🍰\nأريد تقديم طلب جديد:\n\n`;
       cart.forEach(c=>{
         const p = state.products.find(p=>p.id===c.id);
         if(p) msg += `• ${p.name} × ${c.qty} = ${money(p.price*c.qty)}\n`;
       });
-      msg += `\nالإجمالي قبل الخصم: ${money(subtotal)}\n`;
-      if(appliedCoupon) msg += `🎁 كود الخصم: ${appliedCoupon.code} (${appliedCoupon.percent}%-)\n`;
-      msg += `*الإجمالي النهائي: ${money(finalTotal)}*\n\n`;
+      msg += `\n*الإجمالي: ${money(finalTotal)}*\n\n`;
       msg += `👤 الاسم: ${name}\n📱 الموبايل: ${phone}\n`;
       msg += `🏠 طريقة الاستلام: ${deliveryLabel}\n`;
       if(deliveryType==='delivery') msg += `📍 العنوان: ${address}\n`;
@@ -809,7 +783,7 @@ function renderAdminProducts(body){
   list.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
     if(confirm('هل تريد حذف هذا المنتج؟')){
       state.products = state.products.filter(p=>p.id!==b.dataset.del);
-      saveState(); renderAdmin(); renderProducts(); toast('تم الحذف');
+      markUnpublished(); saveState(); renderAdmin(); renderProducts(); toast('تم الحذف');
     }
   });
   list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEditProduct(b.dataset.edit));
@@ -892,7 +866,7 @@ function bindProductForm(prefix, onSave, existing){
     } else {
       state.products.push({id:uid('p_'), name, price, oldPrice, category, desc, rating, featured, emoji:'🍬', image:tempImage});
     }
-    saveState(); renderProducts(); onSave();
+    markUnpublished(); saveState(); renderProducts(); onSave();
   };
 }
 
@@ -928,7 +902,7 @@ function renderAdminBranches(body){
     const phone = document.getElementById('br_phone').value.trim();
     if(!name||!phone){ toast('اكتب اسم الفرع والرقم'); return; }
     state.branches.push({id:Date.now(), name, phone});
-    saveState(); renderAdmin(); toast('تمت إضافة الفرع');
+    markUnpublished(); saveState(); renderAdmin(); toast('تمت إضافة الفرع');
   };
   const list = document.getElementById('branchList');
   list.innerHTML = state.branches.map(b=>`
@@ -941,7 +915,7 @@ function renderAdminBranches(body){
     if(state.branches.length<=1){ toast('لازم يبقى فرع واحد على الأقل'); return; }
     if(confirm('حذف هذا الفرع؟')){
       state.branches = state.branches.filter(b=>b.id!=btn.dataset.del);
-      saveState(); renderAdmin(); toast('تم الحذف');
+      markUnpublished(); saveState(); renderAdmin(); toast('تم الحذف');
     }
   });
 }
@@ -989,7 +963,7 @@ function renderAdminAppearance(body){
     s.bg = document.getElementById('ap_bg').value;
     s.ink = document.getElementById('ap_ink').value;
     s.font = document.getElementById('ap_font').value;
-    saveState(); applyTheme(); toast('تم حفظ المظهر');
+    markUnpublished(); saveState(); applyTheme(); toast('تم حفظ المظهر');
   };
 }
 
@@ -1004,37 +978,12 @@ function renderAdminPayment(body){
       <label class="radio-opt" style="width:fit-content;"><input type="checkbox" id="pay_cod" ${pay.codEnabled?'checked':''}> تفعيل الدفع عند الاستلام</label>
     </div>
     <button class="primary-btn" id="savePayment">حفظ إعدادات الدفع</button>
-    <div class="admin-card" style="margin-top:14px;">
-      <h3>🎁 أكواد الخصم</h3>
-      <div id="couponList"></div>
-      <div class="row2">
-        <div class="field"><input type="text" id="newCouponCode" placeholder="كود (مثال: SWEET10)"></div>
-        <div class="field" style="max-width:90px;"><input type="number" id="newCouponPercent" placeholder="%"></div>
-        <button class="small-btn edit" id="addCouponBtn" style="height:44px;">إضافة</button>
-      </div>
-    </div>
   `;
   document.getElementById('savePayment').onclick = ()=>{
     pay.vodafoneCash = document.getElementById('pay_vf').value.trim();
     pay.instapay = document.getElementById('pay_ip').value.trim();
     pay.codEnabled = document.getElementById('pay_cod').checked;
-    saveState(); toast('تم حفظ وسائل الدفع');
-  };
-  if(!state.coupons) state.coupons = [];
-  const couponList = document.getElementById('couponList');
-  couponList.innerHTML = state.coupons.map(c=>`
-    <div class="admin-list-item"><div class="ph">🎁</div><div class="meta"><b>${c.code}</b>خصم ${c.percent}%</div><button class="small-btn del" data-delcoupon="${c.code}">حذف</button></div>
-  `).join('') || `<p style="font-size:12px;color:#8a7057;">مفيش أكواد خصم مضافة لسه.</p>`;
-  couponList.querySelectorAll('[data-delcoupon]').forEach(b=>b.onclick=()=>{
-    state.coupons = state.coupons.filter(c=>c.code!==b.dataset.delcoupon);
-    saveState(); renderAdminPayment(body); toast('تم حذف الكود');
-  });
-  document.getElementById('addCouponBtn').onclick = ()=>{
-    const code = document.getElementById('newCouponCode').value.trim().toUpperCase();
-    const percent = parseFloat(document.getElementById('newCouponPercent').value)||0;
-    if(!code || !percent){ toast('اكتب الكود ونسبة الخصم'); return; }
-    state.coupons.push({code, percent});
-    saveState(); renderAdminPayment(body); toast('تمت إضافة الكود');
+    markUnpublished(); saveState(); toast('تم حفظ وسائل الدفع');
   };
 }
 
@@ -1081,7 +1030,9 @@ function renderAdminSettings(body){
     <div class="admin-card">
       <h3>🚀 نشر التحديثات لكل العملاء</h3>
       <p style="font-size:12px;color:#7a6a5c;line-height:1.8;">أي تعديل بتعمله هنا (منتجات، أسعار، صور) بيتخزن على جهازك بس. عشان يظهر عند كل العملاء، دوس الزرار ده وارفع الملف اللي هينزل باسم <b>data.json</b> على نفس مستودع GitHub بتاعك (بيستبدل القديم لو موجود). بعد الرفع والـ Commit، كل حد يفتح التطبيق (حتى لو نسخته مثبتة كـ APK) هيشوف التحديث الجديد.</p>
+      ${hasUnpublishedChanges() ? `<div class="note" style="border-color:#a83030;background:#fbe4e4;color:#8c1c1c;margin-bottom:8px;">⚠️ عندك تعديلات لسه ما اتنشرتش. نزّل الملف وارفعه على GitHub، وبعدين دوس "تم الرفع" تحت.</div>` : ''}
       <button class="primary-btn" id="publishData">تحميل ملف التحديث (data.json) 🚀</button>
+      <button class="secondary-btn" id="confirmPublished">✅ تم رفعه على GitHub بنجاح</button>
     </div>
     <div class="admin-card">
       <h3>نسخة احتياطية</h3>
@@ -1135,7 +1086,7 @@ function renderAdminSettings(body){
         if(!state.categoryImages) state.categoryImages = {};
         state.categoryImages[newName] = pendingCatImages[idx];
       }
-      saveState(); renderAdmin(); renderCats(); renderProducts();
+      markUnpublished(); saveState(); renderAdmin(); renderCats(); renderProducts();
       toast('تم حفظ القسم');
     };
   });
@@ -1143,15 +1094,15 @@ function renderAdminSettings(body){
     const name = b.dataset.delcat;
     state.categories = state.categories.filter(c=>c!==name);
     if(state.categoryImages) delete state.categoryImages[name];
-    saveState(); renderAdmin(); renderCats(); renderProducts();
+    markUnpublished(); saveState(); renderAdmin(); renderCats(); renderProducts();
   });
   document.getElementById('addCatBtn').onclick = ()=>{
     const v = document.getElementById('newCatInput').value.trim();
-    if(v && !state.categories.includes(v)){ state.categories.push(v); saveState(); renderAdmin(); renderCats(); toast('تمت إضافة القسم'); }
+    if(v && !state.categories.includes(v)){ state.categories.push(v); markUnpublished(); saveState(); renderAdmin(); renderCats(); toast('تمت إضافة القسم'); }
   };
   document.getElementById('savePass').onclick = ()=>{
     const v = document.getElementById('newPassInput').value.trim();
-    if(v){ state.adminPassword = v; saveState(); toast('تم تحديث كلمة المرور'); }
+    if(v){ state.adminPassword = v; markUnpublished(); saveState(); toast('تم تحديث كلمة المرور'); }
   };
   document.getElementById('publishData').onclick = ()=>{
     const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
@@ -1159,7 +1110,12 @@ function renderAdminSettings(body){
     a.href = URL.createObjectURL(blob);
     a.download = 'data.json';
     a.click();
-    toast('نزّل data.json وارفعه على GitHub عشان التحديثات تظهر للكل');
+    toast('نزّل data.json — ارفعه على GitHub وبعدين دوس "تم الرفع"');
+  };
+  document.getElementById('confirmPublished').onclick = ()=>{
+    clearUnpublished();
+    renderAdminSettings(body);
+    toast('تمام، هيتاكد من التحديث في المرة الجاية اللي التطبيق يفتح فيها 👍');
   };
   document.getElementById('exportData').onclick = ()=>{
     const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
@@ -1176,7 +1132,7 @@ function renderAdminSettings(body){
       try{
         const parsed = JSON.parse(reader.result);
         state = Object.assign(structuredClone(DEFAULT_STATE), parsed);
-        saveState(); applyTheme(); renderCats(); renderProducts(); renderAdmin();
+        markUnpublished(); saveState(); applyTheme(); renderCats(); renderProducts(); renderAdmin();
         toast('تم استيراد البيانات بنجاح');
       }catch(e){ toast('ملف غير صالح'); }
     };
@@ -1196,16 +1152,21 @@ function renderAdminSettings(body){
    ========================================================= */
 async function loadSharedDataThenRender(){
   const startTime = Date.now();
-  try{
-    const res = await fetch('data.json', {cache:'no-store'});
-    if(res.ok){
-      const remote = await res.json();
-      if(remote && remote.products){
-        state = Object.assign(structuredClone(DEFAULT_STATE), remote);
-        saveState();
+  if(hasUnpublishedChanges()){
+    // فيه تعديلات لسه ما اتنشرتش، منسيبش تحميل الموقع يمسحها بنسخة قديمة من الإنترنت
+    toast('عندك تعديلات لسه ما اتنشرتش — انشرها الأول من الإعدادات قبل ما تعمل تعديل جديد');
+  } else {
+    try{
+      const res = await fetch('data.json', {cache:'no-store'});
+      if(res.ok){
+        const remote = await res.json();
+        if(remote && remote.products){
+          state = Object.assign(structuredClone(DEFAULT_STATE), remote);
+          saveState();
+        }
       }
-    }
-  }catch(e){ /* مفيش data.json لسه، أو مفيش إنترنت — هيشتغل بالبيانات المحفوظة محلياً */ }
+    }catch(e){ /* مفيش data.json لسه، أو مفيش إنترنت — هيشتغل بالبيانات المحفوظة محلياً */ }
+  }
   applyTheme();
   renderCats();
   renderProducts();
